@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">くまねこ</string>
+  <string name="action_settings">設定</string>
+
+  <string name="ok">OK</string>
+  <string name="cancel">キャンセル</string>
+
+  <string name="unknown_error">不明なエラーが発生しました</string>
+  <string name="failed_to_login">ログインして下さい</string>
+
+  <string name="id">ID</string>
+  <string name="password">パスワード</string>
+  <string name="login">ログイン</string>
+  <string name="empty_id">IDを入力して下さい</string>
+  <string name="empty_password">PASSWORDを入力して下さい</string>
+  <string name="miss_id_password">IDとPASSWORDのどちらかが間違っています</string>
+
+  <string name="title_activity_map">マップアクティビティ</string>
+  <string name="alert_gps_setting_title">GPS設定</string>
+  <string name="alert_gps_setting_message">GPSが有効になっていません。\n有効化しますか？</string>
+  <string name="failed_to_enabled_gps">GPSを有効にして下さい</string>
+
+</resources>
