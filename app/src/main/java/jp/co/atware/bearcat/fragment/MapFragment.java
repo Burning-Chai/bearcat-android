@@ -79,19 +79,14 @@ public class MapFragment extends Fragment implements LocationListener {
         map.setMultiTouchControls(false);
 
         IMapController mapController = map.getController();
-        mapController.setZoom(2);
+        mapController.setZoom(16);
+        mapController.setCenter(new GeoPoint(35.7126775, 139.7598003));
 
         List<OverlayItem> anotherOverlayItemArray = new ArrayList<>();
         anotherOverlayItemArray.add(new OverlayItem("0, 0", "0, 0", new GeoPoint(0, 0)));
-        anotherOverlayItemArray.add(new OverlayItem("US", "US", new GeoPoint(38.883333, -77.016667)));
-        anotherOverlayItemArray.add(new OverlayItem("China", "China", new GeoPoint(39.916667, 116.383333)));
-        anotherOverlayItemArray.add(new OverlayItem("United Kingdom", "United Kingdom", new GeoPoint(51.5, -0.116667)));
-        anotherOverlayItemArray.add(new OverlayItem("Germany", "Germany", new GeoPoint(52.516667, 13.383333)));
-        anotherOverlayItemArray.add(new OverlayItem("Korea", "Korea", new GeoPoint(38.316667, 127.233333)));
-        anotherOverlayItemArray.add(new OverlayItem("India", "India", new GeoPoint(28.613333, 77.208333)));
-        anotherOverlayItemArray.add(new OverlayItem("Russia", "Russia", new GeoPoint(55.75, 37.616667)));
-        anotherOverlayItemArray.add(new OverlayItem("France", "France", new GeoPoint(48.856667, 2.350833)));
-        anotherOverlayItemArray.add(new OverlayItem("Canada", "Canada", new GeoPoint(45.4, -75.666667)));
+        anotherOverlayItemArray.add(new OverlayItem("TRIP-0001", "東大生協 第2食堂", new GeoPoint(35.7135840967522, 139.764478951693)));
+        anotherOverlayItemArray.add(new OverlayItem("TRIP-0002", "ナマステ本郷三丁目店", new GeoPoint(35.7071440624271, 139.760389924049)));
+        anotherOverlayItemArray.add(new OverlayItem("TRIP-0003", "レストラン アブルボア", new GeoPoint(35.717854661088, 139.761658608913)));
 
         ItemizedIconOverlay<OverlayItem> anotherItemizedIconOverlay = new ItemizedIconOverlay<>(mActivity, anotherOverlayItemArray, null);
         map.getOverlays().add(anotherItemizedIconOverlay);

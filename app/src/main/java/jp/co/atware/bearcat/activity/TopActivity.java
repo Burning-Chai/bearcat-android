@@ -6,13 +6,19 @@ import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.TypedArray;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.SparseArray;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.TranslateAnimation;
 import android.widget.AdapterView;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 import butterknife.Bind;
@@ -36,19 +42,28 @@ public class TopActivity extends AppCompatActivity {
 
     private Activity mActivity;
 
+    //    @Bind(R.id.toolbar)
+    //    Toolbar mToolbar;
+
     @Bind(R.id.drawer_layout)
     DrawerLayout mDrawerLayout;
+
+    @Bind(R.id.frame_container)
+    FrameLayout mFrameLayout;
 
     @Bind(R.id.list_slider_menu)
     ListView mDrawerList;
 
     private String[] mNavMenuTitles;
     private SparseArray<Fragment> fragmentSparseArray = new SparseArray<>();
+    private ActionBarDrawerToggle mDrawerToggle;
+
+    private float lastTranslate = 0.0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_top);
+        setContentView(R.layout.content_top);
 
         ButterKnife.bind(this);
         mActivity = this;
@@ -72,6 +87,8 @@ public class TopActivity extends AppCompatActivity {
             return;
         }
 
+        //        setSupportActionBar(mToolbar);
+
         // Fragment
         fragmentSparseArray.append(0, MapFragment.newInstance(mUserId));
         fragmentSparseArray.append(1, SampleFragment.newInstance(100));
@@ -89,8 +106,43 @@ public class TopActivity extends AppCompatActivity {
         NavDrawerListAdapter adapter = new NavDrawerListAdapter(getApplicationContext(), createNavDrawerItemList());
         mDrawerList.setAdapter(adapter);
 
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, R.drawable.ic_drawer, R.string.app_name, R.string.app_name) {
+            public void onDrawerClosed(View view) {
+                invalidateOptionsMenu();
+            }
+
+            public void onDrawerOpened(View drawerView) {
+                invalidateOptionsMenu();
+            }
+
+            @Override
+            public void onDrawerSlide(View drawerView, float slideOffset) {
+                super.onDrawerSlide(drawerView, slideOffset);
+
+                float moveFactor = (mDrawerList.getWidth() * slideOffset);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                    mFrameLayout.setTranslationX(moveFactor);
+                } else {
+                    TranslateAnimation anim = new TranslateAnimation(lastTranslate, moveFactor, 0.0f, 0.0f);
+                    anim.setDuration(0);
+                    anim.setFillAfter(true);
+                    mFrameLayout.startAnimation(anim);
+
+                    lastTranslate = moveFactor;
+                    invalidateOptionsMenu();
+                }
+            }
+        };
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        //        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        //        getSupportActionBar().setHomeButtonEnabled(true);
+        //        getSupportActionBar().setDisplayShowHomeEnabled(false);
+        mDrawerToggle.syncState();
+
+        // Fragment切り替え
         FragmentManager fragmentManager = getFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.frame_container, fragmentSparseArray.get(0)).commit();
+
     }
 
     private List<NavDrawerItem> createNavDrawerItemList() {
@@ -128,5 +180,44 @@ public class TopActivity extends AppCompatActivity {
             }
         }
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // toggle nav drawer on selecting action bar app icon/title
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        // Handle action bar actions click
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /* *
+     * Called when invalidateOptionsMenu() is triggered
+     */
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        // if nav drawer is opened, hide the action items
+        boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawerList);
+        menu.findItem(R.id.action_settings).setVisible(!drawerOpen);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        mDrawerToggle.syncState();
+    }
+
 
 }
