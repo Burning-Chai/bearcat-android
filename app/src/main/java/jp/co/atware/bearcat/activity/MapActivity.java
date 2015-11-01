@@ -4,26 +4,24 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import butterknife.ButterKnife;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
+import com.couchbase.lite.Document;
 import com.couchbase.lite.Manager;
 import jp.co.atware.bearcat.R;
 import jp.co.atware.bearcat.factory.CouchbaseLiteFactory;
@@ -34,6 +32,13 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class MapActivity extends AppCompatActivity implements LocationListener {
 
@@ -53,23 +58,12 @@ public class MapActivity extends AppCompatActivity implements LocationListener {
         ButterKnife.bind(this);
         mActivity = this;
 
-        mUserId = getIntent().getStringExtra(PreferenceName.USER_ID);
+        SharedPreferences preferences = getSharedPreferences(getString(R.string.app_name), MODE_PRIVATE);
+        mUserId = preferences.getString(PreferenceName.USER_ID, null);
         if (TextUtils.isEmpty(mUserId)) {
             Toast.makeText(this, R.string.failed_to_login, Toast.LENGTH_SHORT).show();
             return;
         }
-
-        Toolbar toolbar = ButterKnife.findById(this, R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = ButterKnife.findById(this, R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
         /* --------------------------------------- MAP --------------------------------------- */
         MapView map = new org.osmdroid.views.MapView(this, 256);
@@ -167,6 +161,13 @@ public class MapActivity extends AppCompatActivity implements LocationListener {
     public void onLocationChanged(final Location location) {
         String msg = "{\"lat\": " + location.getLatitude() + ", \"lng\": " + location.getLongitude() + "}";
         Log.d(TAG, msg); // 35.721065, 139.747899
+
+        try {
+            saveOrUpdateTraceLog((long) (location.getLatitude() * 1e6), (long) (location.getLongitude() * 1e6));
+        } catch (CouchbaseLiteException e) {
+            Toast.makeText(this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+            this.finish();
+        }
     }
 
     @Override
@@ -181,8 +182,66 @@ public class MapActivity extends AppCompatActivity implements LocationListener {
     public void onProviderDisabled(final String provider) {
     }
 
-    private void updateTraceLog() {
+    private void saveOrUpdateTraceLog(final long lat, final long lng) throws CouchbaseLiteException {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy_mm_dd", Locale.getDefault());
 
+        String date = format.format(new Date());
+        Document document = mDatabase.getDocument("log_" + mUserId + "_" + date);
+        if (document == null) {
+            saveTraceLog(lat, lng, date);
+        } else {
+            updateTraceLog(lat, lng, document);
+        }
+    }
+
+    private void saveTraceLog(final long lat, final long lng, final String date) throws CouchbaseLiteException {
+        Map<String, Object> logMap = new HashMap<>();
+        logMap.put("lat", lat);
+        logMap.put("ng", lng);
+
+        List<Map<String, Object>> logList = new ArrayList<>();
+        logList.add(logMap);
+
+        Map<String, Object> propertyMap = new HashMap<>();
+        propertyMap.put("_id", "log_" + mUserId + date);
+        propertyMap.put("id", "log_" + mUserId + date);
+        propertyMap.put("category", "log");
+        propertyMap.put("logs", logList);
+        propertyMap.put("userId", mUserId);
+
+        Document document = mDatabase.createDocument();
+        document.putProperties(propertyMap);
+    }
+
+    /*
+    {
+  "id": "12_2015_11_01",
+  "category": "log",
+  "date": "2015_11_01",
+  "logs": [
+    {
+      "lat": 35721065,
+      "lng": 139747899
+    },
+    {
+      "lat": 35721065,
+      "lng": 139747899
+    }
+  ],
+  "userId": 12
+}
+     */
+
+    private void updateTraceLog(final long lat, final long lng, final Document document) throws CouchbaseLiteException {
+        Map<String, Object> logMap = new HashMap<>();
+        logMap.put("lat", lat);
+        logMap.put("ng", lng);
+
+        Map<String, Object> propertyMap = document.getProperties();
+        List<Map<String, Object>> logList = (List<Map<String, Object>>) propertyMap.get("logs");
+        logList.add(logMap);
+
+        document.putProperties(new HashMap<>(propertyMap));
     }
 
 }
