@@ -12,7 +12,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import jp.co.atware.bearcat.activity.MapActivity;
+import jp.co.atware.bearcat.activity.TopActivity;
 import jp.co.atware.bearcat.util.IntentName;
 import jp.co.atware.bearcat.util.IntentResultCode;
 import jp.co.atware.bearcat.util.PreferenceName;
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences preferences = getSharedPreferences(getString(R.string.app_name), MODE_PRIVATE);
         String userId = preferences.getString(PreferenceName.USER_ID, null);
         if (!TextUtils.isEmpty(userId)) {
-            startActivityForResult(new Intent(this, MapActivity.class), IntentResultCode.MAIN);
+            startActivityForResult(new Intent(this, TopActivity.class), IntentResultCode.MAIN);
         }
     }
 
@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         chatApp.putString(PreferenceName.USER_ID, "12");
         chatApp.apply();
 
-        startActivityForResult(new Intent(this, MapActivity.class), IntentResultCode.MAIN);
+        startActivityForResult(new Intent(this, TopActivity.class), IntentResultCode.MAIN);
     }
 
     @Override

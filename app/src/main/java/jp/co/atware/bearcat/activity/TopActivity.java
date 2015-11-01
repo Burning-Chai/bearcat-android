@@ -1,35 +1,44 @@
 package jp.co.atware.bearcat.activity;
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.TypedArray;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.LinearLayout;
+import android.util.SparseArray;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.Toast;
+import butterknife.Bind;
 import butterknife.ButterKnife;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Manager;
 import jp.co.atware.bearcat.R;
+import jp.co.atware.bearcat.adapter.NavDrawerListAdapter;
 import jp.co.atware.bearcat.factory.CouchbaseLiteFactory;
+import jp.co.atware.bearcat.fragment.MapFragment;
+import jp.co.atware.bearcat.fragment.SampleFragment;
+import jp.co.atware.bearcat.model.NavDrawerItem;
+import jp.co.atware.bearcat.util.IntentName;
 import jp.co.atware.bearcat.util.PreferenceName;
-import org.osmdroid.api.IMapController;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapView;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -40,20 +49,40 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class MapActivity extends AppCompatActivity implements LocationListener {
+public class TopActivity extends AppCompatActivity implements LocationListener {
 
-    private static final String TAG = MapActivity.class.getName();
+    private static final String TAG = TopActivity.class.getName();
 
     private Activity mActivity;
     private String mUserId;
 
+    @Bind(R.id.drawer_layout)
+    DrawerLayout mDrawerLayout;
+
+    @Bind(R.id.list_slider_menu)
+    ListView mDrawerList;
+
+    private String[] mNavMenuTitles;
     private Database mDatabase;
     private LocationManager mLocationManager;
+
+    private static SparseArray<Fragment> fragmentSparseArray = new SparseArray<Fragment>() {{
+        append(0, new MapFragment());
+        append(1, SampleFragment.newInstance(100));
+        append(2, SampleFragment.newInstance(200));
+        append(3, SampleFragment.newInstance(300));
+        append(4, SampleFragment.newInstance(400));
+        append(5, SampleFragment.newInstance(500));
+        append(6, SampleFragment.newInstance(600));
+        append(7, SampleFragment.newInstance(700));
+        append(8, SampleFragment.newInstance(800));
+        append(9, SampleFragment.newInstance(900));
+    }};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_map);
+        setContentView(R.layout.activity_top);
 
         ButterKnife.bind(this);
         mActivity = this;
@@ -65,34 +94,15 @@ public class MapActivity extends AppCompatActivity implements LocationListener {
             return;
         }
 
-        /* --------------------------------------- MAP --------------------------------------- */
-        MapView map = new org.osmdroid.views.MapView(this, 256);
-        map.setBuiltInZoomControls(true);
-        map.setTileSource(TileSourceFactory.MAPNIK);
-        map.setMultiTouchControls(true);
-
-        MapView.LayoutParams mapParams = new MapView.LayoutParams(
-                MapView.LayoutParams.MATCH_PARENT,
-                MapView.LayoutParams.MATCH_PARENT, null,
-                0, 0, MapView.LayoutParams.BOTTOM_CENTER);
-
-
-        LinearLayout map_layout = ButterKnife.findById(this, R.id.mapview);
-        map_layout.addView(map, mapParams);
-
-        IMapController mapController = map.getController();
-        mapController.setZoom(15);
-
-        double tempo_center_lat = 35.45797; //横浜みなとみらいの緯度
-        double tempo_center_lng = 139.632314; //横浜みなとみらいの経度
-        GeoPoint center_gpt = new GeoPoint(tempo_center_lat, tempo_center_lng);
-        mapController.setCenter(center_gpt);
-        /* --------------------------------------- MAP --------------------------------------- */
-
+        // Couchbase Lite
         try {
             mDatabase = CouchbaseLiteFactory.getDatabase(this, Manager.DEFAULT_OPTIONS, "bearcat");
         } catch (CouchbaseLiteException | IOException e) {
             Toast.makeText(this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+
+            Intent intent = new Intent();
+            intent.putExtra(IntentName.LOGOUT, false);
+            setResult(RESULT_OK, intent);
             this.finish();
             return;
         }
@@ -100,6 +110,24 @@ public class MapActivity extends AppCompatActivity implements LocationListener {
         // GPS
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         checkEnableGPS();
+
+        // NavBar
+        mDrawerList.setOnItemClickListener(new SlideMenuClickListener());
+        NavDrawerListAdapter adapter = new NavDrawerListAdapter(getApplicationContext(), createNavDrawerItemList());
+        mDrawerList.setAdapter(adapter);
+    }
+
+    private List<NavDrawerItem> createNavDrawerItemList() {
+        mNavMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
+        TypedArray navMenuIcons = getResources().obtainTypedArray(R.array.nav_drawer_icons);
+
+        List<NavDrawerItem> navDrawerItemList = new ArrayList<>();
+        for (int i = 0; i < mNavMenuTitles.length; i++) {
+            navDrawerItemList.add(new NavDrawerItem(mNavMenuTitles[i], navMenuIcons.getResourceId(i, 0)));
+        }
+        navMenuIcons.recycle();
+
+        return navDrawerItemList;
     }
 
     private void checkEnableGPS() {
@@ -166,6 +194,9 @@ public class MapActivity extends AppCompatActivity implements LocationListener {
             saveOrUpdateTraceLog((long) (location.getLatitude() * 1e6), (long) (location.getLongitude() * 1e6));
         } catch (CouchbaseLiteException e) {
             Toast.makeText(this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent();
+            intent.putExtra(IntentName.LOGOUT, false);
+            setResult(RESULT_OK, intent);
             this.finish();
         }
     }
@@ -213,25 +244,7 @@ public class MapActivity extends AppCompatActivity implements LocationListener {
         document.putProperties(propertyMap);
     }
 
-    /*
-    {
-  "id": "12_2015_11_01",
-  "category": "log",
-  "date": "2015_11_01",
-  "logs": [
-    {
-      "lat": 35721065,
-      "lng": 139747899
-    },
-    {
-      "lat": 35721065,
-      "lng": 139747899
-    }
-  ],
-  "userId": 12
-}
-     */
-
+    @SuppressWarnings("unchecked")
     private void updateTraceLog(final long lat, final long lng, final Document document) throws CouchbaseLiteException {
         Map<String, Object> logMap = new HashMap<>();
         logMap.put("lat", lat);
@@ -242,6 +255,29 @@ public class MapActivity extends AppCompatActivity implements LocationListener {
         logList.add(logMap);
 
         document.putProperties(new HashMap<>(propertyMap));
+    }
+
+    private class SlideMenuClickListener implements ListView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            Fragment fragment = fragmentSparseArray.get(position);
+            if (fragment != null) {
+                FragmentManager fragmentManager = getFragmentManager();
+                fragmentManager.beginTransaction().replace(R.id.frame_container, fragment).commit();
+
+                // update selected item and title, then close the drawer
+                mDrawerList.setItemChecked(position, true);
+                mDrawerList.setSelection(position);
+                setTitle(mNavMenuTitles[position]);
+                mDrawerLayout.closeDrawer(mDrawerList);
+            } else {
+                Toast.makeText(mActivity, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent();
+                intent.putExtra(IntentName.LOGOUT, false);
+                setResult(RESULT_OK, intent);
+                mActivity.finish();
+            }
+        }
     }
 
 }

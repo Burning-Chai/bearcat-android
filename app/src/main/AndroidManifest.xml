@@ -29,7 +29,7 @@
       </intent-filter>
     </activity>
     <activity
-        android:name=".activity.MapActivity"
+        android:name=".activity.TopActivity"
         android:label="@string/title_activity_map"
         android:theme="@style/AppTheme.NoActionBar">
     </activity>

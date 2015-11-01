@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string-array name="nav_drawer_items">
+    <item>Home</item>
+    <item>レストラン</item>
+    <item>観光施設</item>
+    <item>バス停</item>
+    <item>駅</item>
+    <item>商業施設</item>
+    <item>トイレ</item>
+    <item>公衆無線LAN</item>
+    <item>病院</item>
+    <item>避難所</item>
+  </string-array>
+
+  <array name="nav_drawer_icons">
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+    <item>@mipmap/ic_home</item>
+  </array>
+
+</resources>
