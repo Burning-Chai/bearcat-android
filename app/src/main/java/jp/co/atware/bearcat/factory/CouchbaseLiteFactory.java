@@ -32,5 +32,13 @@ public class CouchbaseLiteFactory {
         return mDatabase;
     }
 
+    public static Database getDatabase() {
+        if (mDatabase == null) {
+            throw new IllegalStateException();
+        }
+
+        return mDatabase;
+    }
+
 
 }
